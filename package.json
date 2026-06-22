@@ -1,0 +1,72 @@
+{
+  "name": "timeoff-microservice",
+  "version": "0.1.0",
+  "description": "ExampleHR Time-Off Microservice — manages the lifecycle of time-off requests and keeps per-employee/per-location balances reconciled with the HCM source of truth.",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "mock:hcm": "ts-node test/mocks/hcm-mock-server.ts",
+    "typeorm": "typeorm-ts-node-commonjs -d ./src/database/data-source.ts",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/database/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/database/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./src/database/data-source.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d ./src/database/data-source.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "better-sqlite3": "^11.8.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.2"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "coveragePathIgnorePatterns": ["main.ts", ".module.ts$", ".dto.ts$", ".entity.ts$"],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
