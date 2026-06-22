@@ -14,5 +14,4 @@ npm-debug.log*
 .idea
 .vscode/*
 !.vscode/extensions.json
-Docs/prompts.txt
 server.log

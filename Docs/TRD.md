@@ -192,7 +192,8 @@ within the bounds of what our cache knows.
 | `POST /time-off-requests/{id}/reject` | Reject + release. |
 | `POST /time-off-requests/{id}/cancel` | Cancel + restore. |
 | `POST /sync/refresh` | Realtime pull of one balance from HCM. |
-| `POST /sync/batch` | Import the full corpus from HCM. |
+| `POST /sync/batch` | Pull the full corpus from HCM (we call HCM's batch endpoint). |
+| `POST /sync/import` | Ingest a corpus pushed by HCM (HCM → ExampleHR), with dimensions. |
 
 **Error mapping** (consistent JSON envelope via a global exception filter):
 

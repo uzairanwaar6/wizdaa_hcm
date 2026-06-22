@@ -49,6 +49,22 @@ npm run test:cov    # coverage report
 npm run mock:hcm    # run the standalone HCM mock server (port 4000)
 ```
 
+**Suite:** 42 unit tests + 13 end-to-end tests = **55 passing**. The e2e suite drives the
+real application over HTTP against a mock HCM server, covering the full lifecycle,
+defensive rejection, HCM-authority rejection, invalid dimensions, HCM outage, idempotent
+replay, reject/cancel release & restore, anniversary sync, pushed-corpus import, and the
+error envelope.
+
+**Coverage (business-logic layers, `npm run test:cov`):**
+
+| File | Stmts | Branch | Funcs | Lines |
+| --- | --- | --- | --- | --- |
+| `balances.service.ts` | 97.9% | 90% | 91.7% | 97.8% |
+| `time-off.service.ts` | 86.3% | 62.1% | 81.3% | 86.9% |
+| `sync.service.ts` | 100% | 100% | 83.3% | 100% |
+| `hcm.service.ts` | 85.4% | 62.9% | 66.7% | 88.4% |
+| `*.controller.ts` | 92–100% | 100% | 75–100% | 91–100% |
+
 ## Database & migrations
 
 Schema is owned by **TypeORM migrations** (not `synchronize`). Data access uses the

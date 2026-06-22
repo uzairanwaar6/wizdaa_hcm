@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Balance } from '../database/entities/balance.entity';
-import { RefreshBalanceDto } from '../dtos/sync.dto';
+import { ImportBalancesDto, RefreshBalanceDto } from '../dtos/sync.dto';
 import { SyncService, SyncSummary } from '../services/sync.service';
 
 @ApiTags('sync')
@@ -11,9 +11,18 @@ export class SyncController {
 
   @Post('batch')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Import the full balance corpus from HCM and reconcile the cache.' })
+  @ApiOperation({ summary: 'Pull the full balance corpus from HCM and reconcile the cache.' })
   importBatch(): Promise<SyncSummary> {
     return this.sync.importBatch();
+  }
+
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Ingest a balance corpus pushed by HCM (with dimensions) and reconcile the cache.',
+  })
+  import(@Body() dto: ImportBalancesDto): Promise<SyncSummary> {
+    return this.sync.applyBatch(dto.balances);
   }
 
   @Post('refresh')

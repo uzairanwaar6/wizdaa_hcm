@@ -214,4 +214,31 @@ describe('Time-Off API (e2e, against mock HCM)', () => {
     expect(res.body).toMatchObject({ statusCode: 400, path: '/time-off-requests' });
     expect(Array.isArray(res.body.message)).toBe(true);
   });
+
+  it('ingests a pushed HCM corpus via POST /sync/import and reconciles the cache', async () => {
+    const res = await request(http)
+      .post('/sync/import')
+      .send({
+        balances: [
+          {
+            employeeId: 'e-push',
+            locationId: LOC,
+            leaveType: VAC,
+            entitledDays: 30,
+            availableDays: 18,
+            sourceUpdatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      })
+      .expect(200);
+    expect(res.body).toEqual({ processed: 1, updated: 1 });
+
+    const bal = await getBalance('e-push').expect(200);
+    expect(bal.body.availableDays).toBe(18);
+    expect(bal.body.entitledDays).toBe(30);
+  });
+
+  it('rejects an empty import payload with 400', async () => {
+    await request(http).post('/sync/import').send({ balances: [] }).expect(400);
+  });
 });

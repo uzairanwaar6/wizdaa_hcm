@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { LeaveType } from '../common/enums/leave-type.enum';
-import { HCM_CLIENT, HcmClient } from '../common/hcm/hcm-client.interface';
+import { HCM_CLIENT, HcmBalanceSnapshot, HcmClient } from '../common/hcm/hcm-client.interface';
 import { Balance } from '../database/entities/balance.entity';
 import { BalancesService, BalanceKey } from './balances.service';
 
@@ -26,6 +26,14 @@ export class SyncService {
 
   async importBatch(): Promise<SyncSummary> {
     const snapshots = await this.hcm.fetchBatch();
+    return this.applyAll(snapshots, 'pull');
+  }
+
+  async applyBatch(snapshots: HcmBalanceSnapshot[]): Promise<SyncSummary> {
+    return this.applyAll(snapshots, 'push');
+  }
+
+  private async applyAll(snapshots: HcmBalanceSnapshot[], source: string): Promise<SyncSummary> {
     let updated = 0;
 
     for (const snapshot of snapshots) {
@@ -41,7 +49,7 @@ export class SyncService {
       }
     }
 
-    this.logger.log(`Batch sync: processed ${snapshots.length}, updated ${updated}.`);
+    this.logger.log(`Batch sync (${source}): processed ${snapshots.length}, updated ${updated}.`);
     return { processed: snapshots.length, updated };
   }
 }

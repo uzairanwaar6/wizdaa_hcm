@@ -62,4 +62,20 @@ describe('SyncService', () => {
     const summary = await service.importBatch();
     expect(summary.updated).toBe(1);
   });
+
+  it('applyBatch reconciles a pushed corpus without calling HCM', async () => {
+    balances.find
+      .mockResolvedValueOnce({ availableDays: 10 } as never)
+      .mockResolvedValueOnce(null);
+
+    const summary = await service.applyBatch([
+      snapshot({ employeeId: 'e1', availableDays: 10 }),
+      snapshot({ employeeId: 'e2', availableDays: 7 }),
+    ]);
+
+    expect(hcm.fetchBatch).not.toHaveBeenCalled();
+    expect(balances.applySnapshot).toHaveBeenCalledTimes(2);
+    expect(summary.processed).toBe(2);
+    expect(summary.updated).toBe(1);
+  });
 });
