@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRD — Time-Off Microservice</title>
+    <style>
+      :root {
+        --bg: #f7f8fb;
+        --surface: #ffffff;
+        --surface-2: #f1f3f9;
+        --text: #1c2333;
+        --muted: #5b6478;
+        --border: #e4e8f0;
+        --brand: #5b5bd6;
+        --brand-2: #8b5cf6;
+        --accent: #0ea5e9;
+        --code-bg: #0f1426;
+        --code-text: #e6e9f5;
+        --ok: #16a34a;
+        --warn: #d97706;
+        --danger: #dc2626;
+        --shadow: 0 1px 3px rgba(20, 24, 40, 0.06), 0 8px 24px rgba(20, 24, 40, 0.06);
+        --radius: 14px;
+      }
+      [data-theme="dark"] {
+        --bg: #0c0f1a;
+        --surface: #141a2b;
+        --surface-2: #1b2236;
+        --text: #e7ebf6;
+        --muted: #9aa4bd;
+        --border: #28304a;
+        --brand: #8b8bf0;
+        --brand-2: #a78bfa;
+        --accent: #38bdf8;
+        --code-bg: #070a14;
+        --code-text: #e6e9f5;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg); color: var(--text); line-height: 1.65; -webkit-font-smoothing: antialiased;
+      }
+      #progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--accent)); z-index: 1000; transition: width 0.1s ease-out; }
+      .hero {
+        background: radial-gradient(1200px 400px at 10% -20%, rgba(139, 92, 246, 0.35), transparent 60%),
+                    linear-gradient(135deg, #4f46e5 0%, #7c3aed 45%, #0ea5e9 120%);
+        color: #fff; padding: 56px 32px 64px; position: relative; overflow: hidden;
+      }
+      .hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(700px 300px at 90% 120%, rgba(255,255,255,0.18), transparent 60%); pointer-events: none; }
+      .hero-inner { max-width: 1080px; margin: 0 auto; position: relative; }
+      .eyebrow { text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; font-weight: 700; opacity: 0.85; }
+      .hero h1 { margin: 10px 0 8px; font-size: clamp(28px, 5vw, 46px); line-height: 1.1; font-weight: 800; }
+      .hero p { margin: 0; font-size: 18px; max-width: 760px; opacity: 0.95; }
+      .chips { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      .chip { background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; backdrop-filter: blur(4px); }
+      .chip.status { background: #16a34a; border-color: #16a34a; }
+      .theme-toggle { position: absolute; top: 22px; right: 22px; background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
+      .theme-toggle:hover { background: rgba(255,255,255,0.28); }
+      .layout { max-width: 1080px; margin: -32px auto 0; padding: 0 24px 80px; display: grid; grid-template-columns: 250px 1fr; gap: 36px; position: relative; }
+      nav.toc { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); font-size: 14px; }
+      nav.toc h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+      nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; border-left: 2px solid transparent; transition: all 0.15s; }
+      nav.toc a:hover { color: var(--text); background: var(--surface-2); }
+      nav.toc a.active { color: var(--brand); background: var(--surface-2); border-left-color: var(--brand); font-weight: 600; }
+      main { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 44px; box-shadow: var(--shadow); min-width: 0; }
+      main section { scroll-margin-top: 24px; }
+      h2 { font-size: 23px; font-weight: 800; margin: 44px 0 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border); display: flex; align-items: baseline; gap: 12px; }
+      main > section:first-child h2 { margin-top: 0; }
+      .num { color: var(--brand); font-weight: 800; }
+      h3 { font-size: 17px; font-weight: 700; margin: 26px 0 12px; }
+      p { margin: 0 0 14px; }
+      a { color: var(--brand); }
+      code { font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); color: var(--brand); padding: 2px 7px; border-radius: 6px; font-size: 0.88em; border: 1px solid var(--border); }
+      .codeblock { position: relative; margin: 0 0 18px; }
+      .codeblock pre { background: var(--code-bg); color: var(--code-text); padding: 18px 20px; border-radius: 12px; overflow-x: auto; margin: 0; font-size: 13px; line-height: 1.55; font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border: 1px solid rgba(255,255,255,0.06); }
+      .codeblock pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+      .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cbd2e8; border: 1px solid rgba(255,255,255,0.18); border-radius: 7px; padding: 4px 10px; font-size: 12px; cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s; font-weight: 600; }
+      .codeblock:hover .copy-btn { opacity: 1; }
+      .copy-btn:hover { background: rgba(255,255,255,0.2); }
+      .copy-btn.done { color: #6ee7a8; border-color: #6ee7a8; }
+      .diagram pre { background: var(--code-bg); color: #c8d2f0; }
+      table { width: 100%; border-collapse: collapse; margin: 8px 0 22px; font-size: 14.5px; }
+      th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      thead th { background: var(--surface-2); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+      tbody tr:hover { background: var(--surface-2); }
+      .callout { display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; margin: 0 0 18px; border: 1px solid var(--border); background: var(--surface-2); font-size: 14.5px; }
+      .callout .ico { font-size: 18px; flex: none; line-height: 1.5; }
+      .callout.info { border-left: 4px solid var(--accent); }
+      .callout.note { border-left: 4px solid var(--brand); }
+      .callout.warn { border-left: 4px solid var(--warn); background: rgba(217, 119, 6, 0.08); }
+      .callout.pick { border-left: 4px solid var(--ok); background: rgba(22, 163, 74, 0.08); }
+      .callout p:last-child { margin-bottom: 0; }
+      ol, ul { margin: 0 0 16px; padding-left: 22px; }
+      li { margin: 5px 0; }
+      .m { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 6px; color: #fff; }
+      .m.get { background: #2563eb; }
+      .m.post { background: #16a34a; }
+      .pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: 999px; color: #fff; }
+      .pill.c4 { background: #2563eb; } .pill.c5 { background: #dc2626; }
+      .chosen-tag { font-size: 11px; font-weight: 800; color: #fff; background: var(--ok); padding: 1px 8px; border-radius: 999px; vertical-align: middle; }
+      footer { max-width: 1080px; margin: 0 auto; padding: 0 24px 60px; color: var(--muted); font-size: 13px; text-align: center; }
+      @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } nav.toc { position: relative; top: 0; max-height: none; } main { padding: 28px 20px; } }
+    </style>
+  </head>
+  <body>
+    <div id="progress"></div>
+    <header class="hero">
+      <button class="theme-toggle" onclick="toggleTheme()">🌙 Theme</button>
+      <div class="hero-inner">
+        <div class="eyebrow">Technical Requirements Document</div>
+        <h1>Time-Off Microservice</h1>
+        <p>Engineering design: context, requirements, the chosen HCM reconciliation model, and the alternatives considered.</p>
+        <div class="chips">
+          <span class="chip status">Status: Implemented (reference build)</span>
+          <span class="chip">Owner: ExampleHR — Time &amp; Attendance</span>
+        </div>
+        <div class="chips">
+          <span class="chip">NestJS</span><span class="chip">TypeScript</span><span class="chip">TypeORM</span><span class="chip">SQLite</span><span class="chip">Jest</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="toc">
+        <h4>Contents</h4>
+        <a href="#s1">1 · Context</a>
+        <a href="#s2">2 · Personas</a>
+        <a href="#s3">3 · Goals &amp; non-goals</a>
+        <a href="#s4">4 · Requirements</a>
+        <a href="#s5">5 · Key challenges</a>
+        <a href="#s6">6 · Proposed solution</a>
+        <a href="#s7">7 · Data model</a>
+        <a href="#s8">8 · Core decision</a>
+        <a href="#s9">9 · API design</a>
+        <a href="#s10">10 · Failure handling</a>
+        <a href="#s11">11 · Testing strategy</a>
+        <a href="#s12">12 · Trade-offs &amp; future work</a>
+        <a href="#s13">13 · How to run</a>
+      </nav>
+
+      <main>
+        <section id="s1">
+          <h2><span class="num">1.</span> Context</h2>
+          <p>ExampleHR is the employee-facing surface for requesting time off. The <strong>HCM</strong> (Human Capital Management) system — e.g. Workday or SAP — remains the <strong>source of truth</strong> for employment data, including leave balances. Balances can change in HCM <strong>independently</strong> of ExampleHR (for example a work-anniversary or start-of-year refresh), and HCM is reached over the network and is not perfectly reliable.</p>
+          <p>This service, the <strong>Time-Off Microservice</strong>, manages the lifecycle of a time-off request and keeps the ExampleHR view of leave balances reconciled with HCM, while giving employees instant feedback and protecting against double-booking.</p>
+        </section>
+
+        <section id="s2">
+          <h2><span class="num">2.</span> Personas</h2>
+          <table>
+            <thead><tr><th>Persona</th><th>Needs</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Employee</strong></td><td>An accurate balance and immediate feedback when filing a request.</td></tr>
+              <tr><td><strong>Manager</strong></td><td>To approve requests confident that the underlying data is valid.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="s3">
+          <h2><span class="num">3.</span> Goals and non-goals</h2>
+          <h3>Goals</h3>
+          <ul>
+            <li>Manage the request lifecycle: <code>PENDING → APPROVED / REJECTED / CANCELLED</code>.</li>
+            <li>Keep per-employee / per-location / per-leave-type balances consistent with HCM.</li>
+            <li>Validate requests against HCM (the authority) and <strong>defensively</strong> against a local cache, so we never over-book even if HCM fails to return an error.</li>
+            <li>Absorb independent HCM changes (anniversary / new-year refresh) via sync.</li>
+            <li>Expose REST endpoints; document them with OpenAPI/Swagger.</li>
+            <li>Be provably robust through a rigorous automated test suite.</li>
+          </ul>
+          <h3>Non-goals</h3>
+          <ul>
+            <li>Building the real HCM (it is mocked).</li>
+            <li>Authentication/authorization, multi-tenancy, and UI — out of scope for this exercise.</li>
+            <li>A general-purpose accrual/policy engine (entitlements come from HCM).</li>
+          </ul>
+        </section>
+
+        <section id="s4">
+          <h2><span class="num">4.</span> Requirements</h2>
+          <h3>Functional</h3>
+          <ol>
+            <li>File a time-off request for an <code>(employeeId, locationId, leaveType)</code> and a date range.</li>
+            <li>Approve / reject (manager) and cancel (pending or approved).</li>
+            <li>Read balances and requests, with filtering.</li>
+            <li>Reconcile balances with HCM in real time (single) and in batch (full corpus).</li>
+            <li>Idempotent creation via a caller-supplied key.</li>
+          </ol>
+          <h3>Non-functional</h3>
+          <ul>
+            <li><em>Instant feedback</em>: request validation does not wait on slow background work.</li>
+            <li><em>Integrity</em>: no path may over-book a balance; concurrent writes are safe.</li>
+            <li><em>Defensiveness</em>: tolerate HCM being unavailable or failing to report an error.</li>
+            <li><em>Observability</em>: consistent error envelope, request logging, drift logging.</li>
+            <li><em>Testability</em>: every layer unit-tested; end-to-end flows tested against a mock HCM.</li>
+          </ul>
+        </section>
+
+        <section id="s5">
+          <h2><span class="num">5.</span> Key challenges</h2>
+          <ol>
+            <li><strong>Two sources of truth in tension.</strong> HCM owns the real balance; ExampleHR must respond instantly. The cache can drift.</li>
+            <li><strong>Independent HCM changes.</strong> Anniversary / new-year refreshes alter balances with no request from us; we must detect and adopt them without losing in-flight work.</li>
+            <li><strong>Unreliable error reporting.</strong> HCM <em>usually</em> rejects invalid dimensions or insufficient balance — but "this may not be always guaranteed." We must not rely on HCM alone.</li>
+            <li><strong>Network failure.</strong> HCM can be slow or down; we need a defined, safe behaviour.</li>
+            <li><strong>Concurrency.</strong> Two requests against the same balance must not both succeed beyond what is available.</li>
+            <li><strong>Retries / at-least-once delivery.</strong> Clients retry; we must not double-book.</li>
+          </ol>
+        </section>
+
+        <section id="s6">
+          <h2><span class="num">6.</span> Proposed solution</h2>
+          <p>A NestJS micro-service with a <strong>local SQLite cache</strong> of balances and a persisted request lifecycle. HCM is treated as <strong>authoritative and synchronous</strong> on the write path; a <strong>sync</strong> path reconciles the cache with HCM for reads and for independent HCM changes.</p>
+          <div class="codeblock diagram"><pre><code>        Employee / Manager (REST + Swagger)
+                     │
+        ┌────────────▼─────────────┐
+        │  Controllers (src/...)   │  validation (DTOs), error envelope
+        ├──────────────────────────┤
+        │  Services                │  lifecycle + balance accounting
+        │   - TimeOffService       │
+        │   - BalancesService      │
+        │   - SyncService          │
+        │   - HcmClient (iface)    │──── HTTP ───▶  HCM (source of truth)
+        ├──────────────────────────┤                 (mocked in tests)
+        │  TypeORM repositories    │
+        ├──────────────────────────┤
+        │  SQLite (balance,        │
+        │          time_off_request)│
+        └──────────────────────────┘</code></pre></div>
+          <p><strong>Layering</strong> is by technical role: <code>database/{entities,migrations}</code>, <code>services</code>, <code>controllers</code>, <code>routes</code> (NestJS modules), <code>dtos</code>, <code>middlewares</code>, <code>filters</code>, <code>common</code>. Data access is via the ORM's built-in repositories (<code>@InjectRepository</code>) — no hand-written repository classes. Schema is owned by <strong>migrations</strong> (not <code>synchronize</code>).</p>
+        </section>
+
+        <section id="s7">
+          <h2><span class="num">7.</span> Data model</h2>
+          <p>Two tables. Balances are keyed by <code>(employeeId, locationId, leaveType)</code>.</p>
+          <h3><code>balance</code></h3>
+          <table>
+            <thead><tr><th>Column</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid PK</td></tr>
+              <tr><td><code>employeeId</code>, <code>locationId</code>, <code>leaveType</code></td><td>unique together; indexed</td></tr>
+              <tr><td><code>entitledDays</code></td><td>total entitlement, from HCM</td></tr>
+              <tr><td><code>availableDays</code></td><td>bookable days, mirrors HCM (already net of filed time-off)</td></tr>
+              <tr><td><code>pendingDays</code></td><td>of the filed days, how many await manager approval (informational)</td></tr>
+              <tr><td><code>version</code></td><td>optimistic-lock counter (concurrency)</td></tr>
+              <tr><td><code>sourceUpdatedAt</code></td><td>HCM's last-modified marker — detects independent changes</td></tr>
+              <tr><td><code>lastSyncedAt</code></td><td>when we last reconciled</td></tr>
+              <tr><td><code>createdAt</code>, <code>updatedAt</code></td><td>audit timestamps</td></tr>
+            </tbody>
+          </table>
+          <h3><code>time_off_request</code></h3>
+          <table>
+            <thead><tr><th>Column</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>uuid PK (also used as the HCM <code>externalRef</code>)</td></tr>
+              <tr><td><code>employeeId</code>, <code>locationId</code>, <code>leaveType</code></td><td>dimensions; <code>employeeId</code> indexed</td></tr>
+              <tr><td><code>startDate</code>, <code>endDate</code></td><td>inclusive ISO dates</td></tr>
+              <tr><td><code>numberOfDays</code></td><td>computed from the range unless supplied</td></tr>
+              <tr><td><code>status</code></td><td><code>PENDING / APPROVED / REJECTED / CANCELLED</code>; indexed</td></tr>
+              <tr><td><code>idempotencyKey</code></td><td>unique, nullable — safe retries</td></tr>
+              <tr><td><code>decidedBy</code>, <code>decidedAt</code>, <code>reason</code></td><td>approval/rejection metadata</td></tr>
+              <tr><td><code>createdAt</code>, <code>updatedAt</code></td><td>audit timestamps</td></tr>
+            </tbody>
+          </table>
+          <h3>Balance accounting model</h3>
+          <p><code>availableDays</code> is the <strong>bookable</strong> figure and always mirrors HCM, which deducts when a request is filed. <code>freeToRequest = availableDays</code>. <code>pendingDays</code> is purely informational (how much of the deduction still awaits approval). This keeps the cache consistent across sync: re-pulling <code>availableDays</code> from HCM never double-counts in-flight reservations, because HCM's value already reflects them.</p>
+          <table>
+            <thead><tr><th>Operation</th><th>HCM</th><th>Local <code>availableDays</code></th><th>Local <code>pendingDays</code></th></tr></thead>
+            <tbody>
+              <tr><td>File (create)</td><td><code>-days</code></td><td><code>-days</code></td><td><code>+days</code></td></tr>
+              <tr><td>Approve</td><td>—</td><td>—</td><td><code>-days</code></td></tr>
+              <tr><td>Reject / cancel-pending</td><td><code>+days</code></td><td><code>+days</code></td><td><code>-days</code></td></tr>
+              <tr><td>Cancel-approved</td><td><code>+days</code></td><td><code>+days</code></td><td>—</td></tr>
+              <tr><td>Sync</td><td>source</td><td><code>= HCM available</code></td><td>preserved</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="s8">
+          <h2><span class="num">8.</span> The core decision: HCM reconciliation model</h2>
+          <div class="callout pick">
+            <span class="ico">✅</span>
+            <div><strong>Chosen: HCM-authoritative, synchronous.</strong> On create, the service performs a defensive local pre-check, then calls HCM to reserve. Only if HCM accepts is the request persisted (<code>PENDING</code>) and the local balance mirrored. If HCM is unreachable, the request <strong>fails closed</strong> with <code>503</code>.</div>
+          </div>
+          <h3>Alternatives considered</h3>
+          <table>
+            <thead><tr><th>Option</th><th>Summary</th><th>Why not chosen</th></tr></thead>
+            <tbody>
+              <tr><td><strong>A. HCM-authoritative, synchronous</strong> <span class="chosen-tag">CHOSEN</span></td><td>Validate/reserve in HCM before confirming.</td><td>Strongest integrity, simplest mental model. Cost: latency and availability coupling to HCM — accepted, and mitigated by the local pre-check and a clear fail-closed rule.</td></tr>
+              <tr><td><strong>B. Local-authoritative, async push</strong></td><td>Reserve locally, return instantly, push to HCM in the background; reconcile later.</td><td>Best UX but highest divergence risk; requires a durable outbox + compensation to be correct. More moving parts than the brief warrants.</td></tr>
+              <tr><td><strong>C. Hybrid (reserve local, commit on approve)</strong></td><td>Local reserve for instant PENDING; HCM commit at approval.</td><td>Reasonable, but splits authority across two steps and complicates "is the balance real at file time?" The brief's emphasis on validity at request time favours A.</td></tr>
+            </tbody>
+          </table>
+          <div class="callout note">
+            <span class="ico">🛡️</span>
+            <div><strong>Defensiveness</strong> (addresses challenge 3): even under model A we never trust HCM alone. A local pre-check against the cached <code>availableDays</code> rejects over-booking before HCM is called, so a lax HCM that fails to error cannot cause us to over-book within the bounds of what our cache knows.</div>
+          </div>
+          <h3>Schema scope alternatives</h3>
+          <ul>
+            <li><strong>Ledger table</strong> (append-only balance transactions) — considered for audit and drift reconstruction; <strong>dropped</strong> to keep scope tight. Trade-off: less forensic detail; mitigated by <code>sourceUpdatedAt</code> / <code>lastSyncedAt</code> and drift logging.</li>
+            <li><strong>Outbox / <code>sync_event</code> table</strong> (durable HCM push queue with retries) — considered for graceful degradation when HCM is down; <strong>dropped</strong> in favour of fail-closed. Trade-off: writes are unavailable during an HCM outage. See Future work.</li>
+          </ul>
+        </section>
+
+        <section id="s9">
+          <h2><span class="num">9.</span> API design</h2>
+          <table>
+            <thead><tr><th>Method &amp; path</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><span class="m get">GET</span> <code>/health</code></td><td>Liveness.</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/balances</code></td><td>List balances (filter by employee/location/type).</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/balances/{employeeId}/{locationId}/{leaveType}</code></td><td>Single balance.</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests</code></td><td>File a request (HCM-authoritative).</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/time-off-requests</code></td><td>List requests (filter by employee/status/...).</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/time-off-requests/{id}</code></td><td>Single request.</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/approve</code></td><td>Approve (manager).</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/reject</code></td><td>Reject + release.</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/cancel</code></td><td>Cancel + restore.</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/refresh</code></td><td>Realtime pull of one balance from HCM.</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/batch</code></td><td>Pull the full corpus from HCM (we call HCM's batch endpoint).</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/import</code></td><td>Ingest a corpus pushed by HCM (HCM → ExampleHR), with dimensions.</td></tr>
+            </tbody>
+          </table>
+          <h3>Error mapping <span style="font-size:13px;color:var(--muted);font-weight:600;">(consistent JSON envelope via a global exception filter)</span></h3>
+          <table>
+            <thead><tr><th>Condition</th><th>HTTP</th></tr></thead>
+            <tbody>
+              <tr><td>Validation failure</td><td><span class="pill c4">400</span></td></tr>
+              <tr><td>Unknown request / balance</td><td><span class="pill c4">404</span></td></tr>
+              <tr><td>Illegal lifecycle transition</td><td><span class="pill c4">409</span></td></tr>
+              <tr><td>Insufficient balance / invalid dimensions (local or HCM)</td><td><span class="pill c4">422</span></td></tr>
+              <tr><td>HCM unreachable / 5xx / timeout</td><td><span class="pill c5">503</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="s10">
+          <h2><span class="num">10.</span> Failure handling</h2>
+          <ul>
+            <li><strong>HCM business rejection</strong> → <code>HcmRejectionError</code> → <code>422</code>.</li>
+            <li><strong>HCM transport failure / 5xx / timeout</strong> → <code>HcmUnavailableError</code> → <code>503</code> (fail closed).</li>
+            <li><strong>Compensation:</strong> if HCM accepts a reservation but local persistence then fails, the service releases the local reservation and cancels the HCM reservation (best effort), so the two sides do not diverge.</li>
+            <li><strong>Concurrency:</strong> <code>@VersionColumn</code> optimistic locking guards concurrent balance writes.</li>
+            <li><strong>Idempotency:</strong> a create with a previously-seen <code>idempotencyKey</code> returns the original request and reserves nothing further.</li>
+          </ul>
+        </section>
+
+        <section id="s11">
+          <h2><span class="num">11.</span> Testing strategy</h2>
+          <p>The value of this work is in the tests. Two layers:</p>
+          <ul>
+            <li><strong>Unit tests</strong> (mocked repositories + mocked <code>HcmClient</code>, no I/O): each service and controller in isolation — balance arithmetic, lifecycle transitions and guards, HCM error mapping, controller delegation.</li>
+            <li><strong>End-to-end / integration tests</strong>: the real Nest application driven over HTTP (supertest) against a <strong>mock HCM server</strong> that simulates balances, reservations, insufficient/invalid errors, anniversary bonuses and a full outage. Scenarios: file → approve, defensive 422, HCM-authority 422, invalid dimensions, outage 503, idempotent replay, reject/cancel release &amp; restore, anniversary sync, and the validation envelope.</li>
+          </ul>
+          <p>Run: <code>npm test</code> (unit), <code>npm run test:e2e</code> (integration), <code>npm run test:cov</code> (coverage). Coverage centres on the business-logic services (balances, time-off, sync, HCM client); controllers/DTOs/entities are thin and exercised end-to-end.</p>
+        </section>
+
+        <section id="s12">
+          <h2><span class="num">12.</span> Trade-offs, risks, future work</h2>
+          <ul>
+            <li><strong>Fail-closed writes during an HCM outage.</strong> Acceptable for integrity; a durable <strong>outbox</strong> with retries would allow graceful degradation (queue + reconcile).</li>
+            <li><strong>No ledger.</strong> Drift is detected and logged but not fully reconstructable; an append-only ledger would add forensic audit and exact reconciliation.</li>
+            <li><strong>Calendar-day counting.</strong> <code>numberOfDays</code> is an inclusive calendar span; a real system would honour working-day calendars and partial days per location policy.</li>
+            <li><strong>SQLite.</strong> Chosen per the brief; the design (migrations, repositories, optimistic locking) ports to Postgres with minimal change.</li>
+            <li><strong>Auth.</strong> Not implemented; would be added as a guard/middleware layer.</li>
+          </ul>
+        </section>
+
+        <section id="s13">
+          <h2><span class="num">13.</span> How to run</h2>
+          <div class="codeblock"><pre><code>npm install
+npm run migration:run     # create the SQLite schema
+npm run mock:hcm          # terminal 1: HCM mock on :4000
+npm run start:dev         # terminal 2: service on :3000  (Swagger at /docs)</code></pre></div>
+        </section>
+      </main>
+    </div>
+
+    <footer>Time-Off Microservice · Technical Requirements Document · NestJS + SQLite</footer>
+
+    <script>
+      function toggleTheme() {
+        var root = document.documentElement;
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("toff-theme", next); } catch (e) {}
+        document.querySelector(".theme-toggle").textContent = next === "dark" ? "☀️ Theme" : "🌙 Theme";
+      }
+      (function () {
+        try {
+          var saved = localStorage.getItem("toff-theme");
+          if (saved) {
+            document.documentElement.setAttribute("data-theme", saved);
+            document.querySelector(".theme-toggle").textContent = saved === "dark" ? "☀️ Theme" : "🌙 Theme";
+          }
+        } catch (e) {}
+      })();
+      document.querySelectorAll(".codeblock").forEach(function (block) {
+        var btn = document.createElement("button");
+        btn.className = "copy-btn"; btn.textContent = "Copy";
+        btn.addEventListener("click", function () {
+          var code = block.querySelector("code").innerText;
+          navigator.clipboard.writeText(code).then(function () {
+            btn.textContent = "Copied!"; btn.classList.add("done");
+            setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+          });
+        });
+        block.appendChild(btn);
+      });
+      var bar = document.getElementById("progress");
+      var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+      var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+      function onScroll() {
+        var st = window.scrollY || document.documentElement.scrollTop;
+        var h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+        var idx = 0;
+        for (var i = 0; i < sections.length; i++) {
+          if (sections[i] && sections[i].getBoundingClientRect().top <= 120) idx = i;
+        }
+        links.forEach(function (l, i) { l.classList.toggle("active", i === idx); });
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    </script>
+  </body>
+</html>

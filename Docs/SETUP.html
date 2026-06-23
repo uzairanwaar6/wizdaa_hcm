@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Setup Guide — Time-Off Microservice</title>
+    <style>
+      :root {
+        --bg: #f7f8fb;
+        --surface: #ffffff;
+        --surface-2: #f1f3f9;
+        --text: #1c2333;
+        --muted: #5b6478;
+        --border: #e4e8f0;
+        --brand: #5b5bd6;
+        --brand-2: #8b5cf6;
+        --accent: #0ea5e9;
+        --code-bg: #0f1426;
+        --code-text: #e6e9f5;
+        --ok: #16a34a;
+        --warn: #d97706;
+        --danger: #dc2626;
+        --shadow: 0 1px 3px rgba(20, 24, 40, 0.06), 0 8px 24px rgba(20, 24, 40, 0.06);
+        --radius: 14px;
+      }
+      [data-theme="dark"] {
+        --bg: #0c0f1a;
+        --surface: #141a2b;
+        --surface-2: #1b2236;
+        --text: #e7ebf6;
+        --muted: #9aa4bd;
+        --border: #28304a;
+        --brand: #8b8bf0;
+        --brand-2: #a78bfa;
+        --accent: #38bdf8;
+        --code-bg: #070a14;
+        --code-text: #e6e9f5;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      #progress {
+        position: fixed; top: 0; left: 0; height: 3px; width: 0;
+        background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--accent));
+        z-index: 1000; transition: width 0.1s ease-out;
+      }
+      .hero {
+        background: radial-gradient(1200px 400px at 10% -20%, rgba(139, 92, 246, 0.35), transparent 60%),
+                    linear-gradient(135deg, #4f46e5 0%, #7c3aed 45%, #0ea5e9 120%);
+        color: #fff; padding: 56px 32px 64px; position: relative; overflow: hidden;
+      }
+      .hero::after {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(700px 300px at 90% 120%, rgba(255,255,255,0.18), transparent 60%);
+        pointer-events: none;
+      }
+      .hero-inner { max-width: 1080px; margin: 0 auto; position: relative; }
+      .eyebrow { text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; font-weight: 700; opacity: 0.85; }
+      .hero h1 { margin: 10px 0 8px; font-size: clamp(28px, 5vw, 46px); line-height: 1.1; font-weight: 800; }
+      .hero p { margin: 0; font-size: 18px; max-width: 720px; opacity: 0.95; }
+      .chips { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+      .chip {
+        background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255,255,255,0.25);
+        color: #fff; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+        backdrop-filter: blur(4px);
+      }
+      .theme-toggle {
+        position: absolute; top: 22px; right: 22px; background: rgba(255,255,255,0.16);
+        border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 999px;
+        padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;
+      }
+      .theme-toggle:hover { background: rgba(255,255,255,0.28); }
+      .layout {
+        max-width: 1080px; margin: -32px auto 0; padding: 0 24px 80px;
+        display: grid; grid-template-columns: 240px 1fr; gap: 36px; position: relative;
+      }
+      nav.toc {
+        position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto;
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+        padding: 18px; box-shadow: var(--shadow); font-size: 14px;
+      }
+      nav.toc h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+      nav.toc a {
+        display: block; color: var(--muted); text-decoration: none; padding: 6px 10px;
+        border-radius: 8px; border-left: 2px solid transparent; transition: all 0.15s;
+      }
+      nav.toc a:hover { color: var(--text); background: var(--surface-2); }
+      nav.toc a.active { color: var(--brand); background: var(--surface-2); border-left-color: var(--brand); font-weight: 600; }
+      main {
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+        padding: 40px 44px; box-shadow: var(--shadow); min-width: 0;
+      }
+      main section { scroll-margin-top: 24px; }
+      h2 {
+        font-size: 24px; font-weight: 800; margin: 44px 0 16px; padding-bottom: 10px;
+        border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 12px;
+      }
+      main > section:first-child h2 { margin-top: 0; }
+      h3 { font-size: 18px; font-weight: 700; margin: 28px 0 12px; }
+      p { margin: 0 0 14px; }
+      a { color: var(--brand); }
+      .lead { font-size: 17px; color: var(--muted); }
+      .step-badge {
+        display: inline-flex; align-items: center; justify-content: center; flex: none;
+        width: 32px; height: 32px; border-radius: 10px; font-size: 15px; font-weight: 800; color: #fff;
+        background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 4px 10px rgba(91, 91, 214, 0.35);
+      }
+      code {
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: var(--surface-2); color: var(--brand); padding: 2px 7px; border-radius: 6px;
+        font-size: 0.88em; border: 1px solid var(--border);
+      }
+      .codeblock { position: relative; margin: 0 0 18px; }
+      .codeblock pre {
+        background: var(--code-bg); color: var(--code-text); padding: 18px 20px; border-radius: 12px;
+        overflow-x: auto; margin: 0; font-size: 13.5px; line-height: 1.6;
+        font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+      .codeblock pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+      .copy-btn {
+        position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.1); color: #cbd2e8;
+        border: 1px solid rgba(255,255,255,0.18); border-radius: 7px; padding: 4px 10px; font-size: 12px;
+        cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s; font-weight: 600;
+      }
+      .codeblock:hover .copy-btn { opacity: 1; }
+      .copy-btn:hover { background: rgba(255,255,255,0.2); }
+      .copy-btn.done { color: #6ee7a8; border-color: #6ee7a8; }
+      table { width: 100%; border-collapse: collapse; margin: 8px 0 22px; font-size: 14.5px; }
+      th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+      thead th { background: var(--surface-2); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+      tbody tr:hover { background: var(--surface-2); }
+      th:first-child, td:first-child { border-top-left-radius: 0; }
+      .callout {
+        display: flex; gap: 12px; padding: 14px 16px; border-radius: 12px; margin: 0 0 18px;
+        border: 1px solid var(--border); background: var(--surface-2); font-size: 14.5px;
+      }
+      .callout .ico { font-size: 18px; flex: none; line-height: 1.5; }
+      .callout.info { border-left: 4px solid var(--accent); }
+      .callout.note { border-left: 4px solid var(--brand); }
+      .callout.warn { border-left: 4px solid var(--warn); background: rgba(217, 119, 6, 0.08); }
+      .callout p:last-child { margin-bottom: 0; }
+      ol, ul { margin: 0 0 16px; padding-left: 22px; }
+      li { margin: 5px 0; }
+      .m { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 6px; color: #fff; }
+      .m.get { background: #2563eb; }
+      .m.post { background: #16a34a; }
+      footer { max-width: 1080px; margin: 0 auto; padding: 0 24px 60px; color: var(--muted); font-size: 13px; text-align: center; }
+      @media (max-width: 860px) {
+        .layout { grid-template-columns: 1fr; }
+        nav.toc { position: relative; top: 0; max-height: none; }
+        main { padding: 28px 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="progress"></div>
+    <header class="hero">
+      <button class="theme-toggle" onclick="toggleTheme()">🌙 Theme</button>
+      <div class="hero-inner">
+        <div class="eyebrow">Setup Guide</div>
+        <h1>Time-Off Microservice</h1>
+        <p>A step-by-step guide to install, configure, migrate, run, and verify the service.</p>
+        <div class="chips">
+          <span class="chip">NestJS</span>
+          <span class="chip">TypeScript</span>
+          <span class="chip">TypeORM</span>
+          <span class="chip">SQLite</span>
+          <span class="chip">Jest</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav class="toc">
+        <h4>On this page</h4>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#step-1">Step 1 — Get the code</a>
+        <a href="#step-2">Step 2 — Install</a>
+        <a href="#step-3">Step 3 — Environment</a>
+        <a href="#step-4">Step 4 — Migrations</a>
+        <a href="#step-5">Step 5 — HCM mock</a>
+        <a href="#step-6">Step 6 — Start service</a>
+        <a href="#step-7">Step 7 — Verify</a>
+        <a href="#tests">Running the tests</a>
+        <a href="#api">API reference</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+
+      <main>
+        <section id="prerequisites">
+          <h2>Prerequisites</h2>
+          <table>
+            <thead><tr><th>Tool</th><th>Version</th><th>Check</th></tr></thead>
+            <tbody>
+              <tr><td>Node.js</td><td>&ge; 20 (developed on 22)</td><td><code>node --version</code></td></tr>
+              <tr><td>npm</td><td>&ge; 10</td><td><code>npm --version</code></td></tr>
+            </tbody>
+          </table>
+          <p>No global installs are required — the NestJS CLI and TypeORM CLI come in as dev dependencies.</p>
+        </section>
+
+        <section id="step-1">
+          <h2><span class="step-badge">1</span> Get the code</h2>
+          <p>Extract the provided zip file and open a terminal in the project folder. The zip contains all project files (everything except <code>node_modules</code>).</p>
+        </section>
+
+        <section id="step-2">
+          <h2><span class="step-badge">2</span> Install dependencies</h2>
+          <div class="codeblock"><pre><code>npm install</code></pre></div>
+        </section>
+
+        <section id="step-3">
+          <h2><span class="step-badge">3</span> Configure environment</h2>
+          <p>A ready-to-use <code>.env</code> is included in the zip — no copying is needed. Adjust the values only if required:</p>
+          <table>
+            <thead><tr><th>Variable</th><th>Default</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>NODE_ENV</code></td><td><code>development</code></td><td>Runtime mode</td></tr>
+              <tr><td><code>PORT</code></td><td><code>3000</code></td><td>HTTP port the service listens on</td></tr>
+              <tr><td><code>DB_PATH</code></td><td><code>./data/timeoff.sqlite</code></td><td>SQLite file path (use <code>:memory:</code> for throwaway runs)</td></tr>
+              <tr><td><code>DB_SYNCHRONIZE</code></td><td><code>false</code></td><td>Keep <strong>false</strong> — schema is owned by migrations</td></tr>
+              <tr><td><code>DB_LOGGING</code></td><td><code>false</code></td><td>Log SQL to the console</td></tr>
+              <tr><td><code>HCM_BASE_URL</code></td><td><code>http://localhost:4000</code></td><td>Base URL of the HCM API (the mock server in dev)</td></tr>
+              <tr><td><code>HCM_API_KEY</code></td><td><code>dev-placeholder-key</code></td><td>Bearer token sent to HCM</td></tr>
+              <tr><td><code>HCM_TIMEOUT_MS</code></td><td><code>5000</code></td><td>HCM request timeout before failing closed</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="step-4">
+          <h2><span class="step-badge">4</span> Run the database migrations</h2>
+          <div class="codeblock"><pre><code>npm run migration:run</code></pre></div>
+          <div class="callout info">
+            <span class="ico">✅</span>
+            <div>
+              <strong>What to expect:</strong>
+              <ul>
+                <li>The SQLite file <strong>and its folder are created automatically</strong> if they don't exist (e.g. <code>./data/timeoff.sqlite</code>).</li>
+                <li>A <code>migrations</code> tracking table is created, then <code>balance</code> and <code>time_off_request</code> with their indexes and constraints.</li>
+                <li>Output ends with: <code>Migration InitSchema1782164513146 has been executed successfully.</code></li>
+              </ul>
+              Running it again is safe — it prints <code>No migrations are pending</code> and does nothing.
+            </div>
+          </div>
+          <div class="callout note">
+            <span class="ico">📝</span>
+            <div>SQLite auto-creates the database file. On a server database (Postgres/MySQL) the database itself must already exist; migrations only create the tables inside it.</div>
+          </div>
+          <p>Other migration commands:</p>
+          <table>
+            <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>npm run migration:run</code></td><td>Apply all pending migrations</td></tr>
+              <tr><td><code>npm run migration:revert</code></td><td>Roll back the most recent migration</td></tr>
+              <tr><td><code>npm run migration:show</code></td><td>List applied (<code>[X]</code>) and pending (<code>[ ]</code>) migrations</td></tr>
+              <tr><td><code>npm run migration:generate -- ./src/database/migrations/&lt;Name&gt;</code></td><td>Generate a new migration from entity changes</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="step-5">
+          <h2><span class="step-badge">5</span> Start the HCM mock server <span style="font-size:13px;color:var(--muted);font-weight:600;">(recommended)</span></h2>
+          <p>HCM is the source of truth, so write operations call it. In development, run the bundled mock:</p>
+          <div class="codeblock"><pre><code>npm run mock:hcm</code></pre></div>
+          <div class="callout info">
+            <span class="ico">✅</span>
+            <div><strong>What to expect:</strong> <code>HCM mock server listening on http://localhost:4000</code>. It is seeded with a couple of demo balances for <code>emp-001</code> / <code>loc-nyc</code>.</div>
+          </div>
+          <div class="callout warn">
+            <span class="ico">⚠️</span>
+            <div>If you skip this step, read endpoints still work, but <strong>filing a request returns <code>503</code></strong> — that is the intended "fail closed when HCM is unreachable" behavior.</div>
+          </div>
+        </section>
+
+        <section id="step-6">
+          <h2><span class="step-badge">6</span> Start the service</h2>
+          <p>In a second terminal:</p>
+          <div class="codeblock"><pre><code># development (auto-reload)
+npm run start:dev
+
+# OR production
+npm run build
+npm run start:prod</code></pre></div>
+          <div class="callout info">
+            <span class="ico">✅</span>
+            <div><strong>What to expect:</strong> Nest logs each module initializing and every mapped route, ending with <code>Time-Off Microservice listening on http://localhost:3000</code>.</div>
+          </div>
+        </section>
+
+        <section id="step-7">
+          <h2><span class="step-badge">7</span> Verify it's working</h2>
+          <table>
+            <thead><tr><th>Check</th><th>URL / command</th><th>Expected</th></tr></thead>
+            <tbody>
+              <tr><td>Health</td><td><code>GET http://localhost:3000/health</code></td><td><code>{"status":"ok","service":"timeoff-microservice",...}</code></td></tr>
+              <tr><td>Swagger UI</td><td>open <code>http://localhost:3000/docs</code></td><td>Interactive API explorer</td></tr>
+              <tr><td>OpenAPI JSON</td><td><code>http://localhost:3000/docs-json</code></td><td>Raw spec</td></tr>
+              <tr><td>List balances</td><td><code>GET http://localhost:3000/balances</code></td><td><code>[]</code> on a fresh DB</td></tr>
+            </tbody>
+          </table>
+          <h3>Try a full flow in Swagger (with the mock running)</h3>
+          <ol>
+            <li><code>POST /sync/refresh</code> with <code>{ "employeeId": "emp-001", "locationId": "loc-nyc", "leaveType": "VACATION" }</code> — pulls the balance from HCM into the local cache.</li>
+            <li><code>POST /time-off-requests</code> with a date range — creates a <code>PENDING</code> request and reserves the days.</li>
+            <li><code>POST /time-off-requests/{id}/approve</code> with <code>{ "managerId": "mgr-1" }</code> — commits it.</li>
+            <li><code>GET /balances/emp-001/loc-nyc/VACATION</code> — see <code>availableDays</code> / <code>pendingDays</code> update.</li>
+          </ol>
+        </section>
+
+        <section id="tests">
+          <h2>Running the tests</h2>
+          <div class="codeblock"><pre><code>npm test            # unit tests        -> 42 passing
+npm run test:e2e    # end-to-end tests  -> 13 passing (boots the app + an in-process mock HCM)
+npm run test:cov    # unit tests + coverage report (./coverage)</code></pre></div>
+          <div class="callout info">
+            <span class="ico">🧪</span>
+            <div><strong>What to expect:</strong> all suites green (<strong>55 tests total</strong>). The e2e suite starts its <strong>own</strong> mock HCM on a random port and uses an in-memory SQLite DB, so it needs neither <code>npm run mock:hcm</code> nor a migrated file.</div>
+          </div>
+        </section>
+
+        <section id="api">
+          <h2>API reference</h2>
+          <table>
+            <thead><tr><th>Method &amp; path</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><span class="m get">GET</span> <code>/health</code></td><td>Liveness</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/balances</code></td><td>List balances (filterable)</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/balances/{employeeId}/{locationId}/{leaveType}</code></td><td>Single balance</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests</code></td><td>File a request (HCM-authoritative)</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/time-off-requests</code></td><td>List requests (filterable)</td></tr>
+              <tr><td><span class="m get">GET</span> <code>/time-off-requests/{id}</code></td><td>Single request</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/approve</code></td><td>Approve (manager)</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/reject</code></td><td>Reject + release reservation</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/time-off-requests/{id}/cancel</code></td><td>Cancel + restore balance</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/refresh</code></td><td>Realtime pull of one balance from HCM</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/batch</code></td><td>Pull the whole corpus from HCM</td></tr>
+              <tr><td><span class="m post">POST</span> <code>/sync/import</code></td><td>Ingest a corpus pushed by HCM</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="troubleshooting">
+          <h2>Troubleshooting</h2>
+          <table>
+            <thead><tr><th>Symptom</th><th>Cause / fix</th></tr></thead>
+            <tbody>
+              <tr><td><code>POST /time-off-requests</code> returns <code>503</code></td><td>HCM mock not running — start <code>npm run mock:hcm</code>, or check <code>HCM_BASE_URL</code>.</td></tr>
+              <tr><td><code>422</code> on create</td><td>Insufficient balance or invalid employee/location/leaveType combination.</td></tr>
+              <tr><td><code>Port 3000 already in use</code></td><td>Another process is bound — stop it or change <code>PORT</code> in <code>.env</code>.</td></tr>
+              <tr><td><code>no such table: balance</code></td><td>Migrations not applied — run <code>npm run migration:run</code>.</td></tr>
+              <tr><td>Want a clean slate</td><td>Delete the <code>./data</code> folder, then <code>npm run migration:run</code> again.</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+
+    <footer>Time-Off Microservice · Setup Guide · NestJS + SQLite</footer>
+
+    <script>
+      function toggleTheme() {
+        var root = document.documentElement;
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("toff-theme", next); } catch (e) {}
+        document.querySelector(".theme-toggle").textContent = next === "dark" ? "☀️ Theme" : "🌙 Theme";
+      }
+      (function () {
+        try {
+          var saved = localStorage.getItem("toff-theme");
+          if (saved) {
+            document.documentElement.setAttribute("data-theme", saved);
+            document.querySelector(".theme-toggle").textContent = saved === "dark" ? "☀️ Theme" : "🌙 Theme";
+          }
+        } catch (e) {}
+      })();
+
+      document.querySelectorAll(".codeblock").forEach(function (block) {
+        var btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copy";
+        btn.addEventListener("click", function () {
+          var code = block.querySelector("code").innerText;
+          navigator.clipboard.writeText(code).then(function () {
+            btn.textContent = "Copied!"; btn.classList.add("done");
+            setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1500);
+          });
+        });
+        block.appendChild(btn);
+      });
+
+      var bar = document.getElementById("progress");
+      var links = Array.prototype.slice.call(document.querySelectorAll("nav.toc a"));
+      var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+      function onScroll() {
+        var st = window.scrollY || document.documentElement.scrollTop;
+        var h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        bar.style.width = (h > 0 ? (st / h) * 100 : 0) + "%";
+        var idx = 0;
+        for (var i = 0; i < sections.length; i++) {
+          if (sections[i] && sections[i].getBoundingClientRect().top <= 120) idx = i;
+        }
+        links.forEach(function (l, i) { l.classList.toggle("active", i === idx); });
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    </script>
+  </body>
+</html>
